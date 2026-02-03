@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Orders\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 
 class OrderForm
 {
@@ -51,7 +53,13 @@ class OrderForm
                 ]),
                 Section::make('Righe')->collapsible()
                     ->schema([
-                        Repeater::make('rows')->label('Prodotti')->columns(2)->relationship()
+                        Repeater::make('rows')->label('Righe')->columns(2)->hiddenLabel(true)->relationship()
+                            ->table([
+                                TableColumn::make('Prodotto'),
+                                TableColumn::make('Quantità')->width('300px'),
+                                TableColumn::make('Riga Evasa')->width('100px'),
+                            ])
+                            // ->compact()
                             ->schema([
                                 Select::make('product_id')
                                     ->label('Prodotto')
