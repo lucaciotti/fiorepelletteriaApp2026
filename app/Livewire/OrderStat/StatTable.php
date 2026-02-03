@@ -157,7 +157,7 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
         $groupColumns = array_map(fn($v) => $v == 'order_id' ? 'work_orders.order_id' : $v, $groupColumns);
         // $records = WorkOrder::selectRaw(implode(', ', $groupColumns) . ', ' . $lvl . ' as lvl, SUM(quantity) as quantity, SUM(total_minutes) as total_minutes, MIN(created_at) as created_at, MAX(end_at) as end_at')
         if ($lvl==99){
-            $selectRaw = implode(', ', $groupColumns) . ', ' . $lvl . ' as lvl, SUM(work_orders.quantity) as quantity, SUM(total_minutes) as total_minutes, 0 as avg_minutes, MIN(work_orders.created_at) as created_at, MAX(work_orders.end_at) as end_at';
+            $selectRaw = implode(', ', $groupColumns) . ', ' . $lvl . ' as lvl, SUM(order_rows.quantity) as quantity, SUM(total_minutes) as total_minutes, 0 as avg_minutes, MIN(work_orders.created_at) as created_at, MAX(work_orders.end_at) as end_at';
         } else {
             $selectRaw = implode(', ', $groupColumns) . ', ' . $lvl . ' as lvl, 0 as quantity, 0 as total_minutes, 0 as avg_minutes, MIN(work_orders.created_at) as created_at, MAX(work_orders.end_at) as end_at';
         }
