@@ -5,6 +5,8 @@ namespace App\Filament\Resources\WorkOrders\Schemas;
 use App\Models\Order;
 use App\Models\OrderRow;
 use App\Models\ProcessType;
+use App\Models\Product;
+use App\Models\ProductProcessType;
 use DateTime;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
@@ -54,7 +56,17 @@ class WorkOrderForm
                         ->required(),
                     Select::make('process_type_id')
                         ->label('Tipo Lavorazione')
-                        ->options(ProcessType::all()->pluck('full_descr', 'id'))
+                        ->options(function(Get $get) {
+                            $orderRow = OrderRow::where('id', $get('order_row_id'))->first();
+                            if ($orderRow){
+                                $processTypeIds = ProductProcessType::where('product_id', $orderRow->product_id)->get()->pluck('process_type_id');
+                                if (count($processTypeIds)>0){
+                                    return ProcessType::whereIn('id', $processTypeIds)->get()->pluck('full_descr', 'id');
+                                }
+                            }
+                            return ProcessType::all()->pluck('full_descr', 'id');
+                        })
+                        // ->options(ProcessType::all()->pluck('full_descr', 'id'))
                         // ->relationship('processType', 'full_descr')
                         ->searchable()
                         ->preload()
@@ -182,13 +194,13 @@ class WorkOrderForm
                         ->color('danger')
                         ->requiresConfirmation()
                         ->disabled(fn(Get $get) => $get('start_at')==null || $get('paused') == true)
-                        ->schema([
-                            TextInput::make('quantity')->label('Quantità')
-                                ->required()
-                                ->numeric(),
-                        ])
+                        // ->schema([
+                        //     TextInput::make('quantity')->label('Quantità')
+                        //         ->required()
+                        //         ->numeric(),
+                        // ])
                         ->action(function (array $data, Set $set, Get $get, $state, EditRecord $livewire) {
-                            $set('quantity', $data['quantity']);
+                            // $set('quantity', $data['quantity']);
                             $set('end_at', now());
                             $records = $get('recordsTime');
                             end($records);         // move the internal pointer to the end of the array

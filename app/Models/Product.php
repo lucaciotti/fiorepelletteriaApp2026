@@ -19,6 +19,6 @@ class Product extends Model
 
     public function processTypes(): HasManyThrough
     {
-        return $this->hasManyThrough(ProcessType::class, ProductProcessType::class);
+        return $this->hasManyThrough(ProcessType::class, ProductProcessType::class, 'id', 'id', 'process_type_id', 'product_id');
     }
 }
