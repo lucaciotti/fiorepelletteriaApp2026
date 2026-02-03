@@ -1,0 +1,231 @@
+<?php
+
+namespace App\Filament\Resources\WorkOrders\Schemas;
+
+use DateTime;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Auth;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\Section;
+
+class WorkOrderForm
+{
+    public static function configure(Schema $schema): Schema
+    {
+        $operator_id = Auth::user()->operator_id;
+        return $schema
+            ->columns(1)
+            ->components([
+                TextInput::make('ord_num')
+                    ->label('Commessa (Num.Ordine)')
+                    ->required(),
+                Fieldset::make('Anagrafiche')
+                    ->schema([
+
+                        Select::make('operator_id')
+                            ->default($operator_id)
+                            ->label('Operatore Lavorazione')
+                            ->relationship('operator', 'name')
+                            ->required(),
+                        Select::make('customer_id')
+                            ->label('Cliente')
+                            ->relationship('customer', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->label('Ragione Sociale')
+                                    ->required()
+                                    ->maxLength(255),
+                                TextInput::make('subname')
+                                    ->label('Descrizione')
+                                    ->maxLength(255),
+                                TextInput::make('tva')
+                                    ->label('P.Iva')
+                                    ->maxLength(255),
+                                TextInput::make('localita')
+                                    ->label('Località')
+                                    ->maxLength(255),
+                                TextInput::make('indirizzo')
+                                    ->label('Indirizzo')
+                                    ->maxLength(255),
+                            ]),
+                    ]),
+                Fieldset::make('Dati produzione')->columns(3)
+                    ->schema([
+                        Select::make('process_type_id')
+                            ->label('Tipo Lavorazione')
+                            ->relationship('processType', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                            // ->createOptionForm([
+                            //     TextInput::make('code')
+                            //         ->label('Codice Lavorazione')
+                            //         ->required()
+                            //         ->maxLength(255),
+                            //     TextInput::make('name')
+                            //         ->label('Nome Lavorazione')
+                            //         ->required()
+                            //         ->maxLength(255),
+                            //     TextInput::make('description')
+                            //         ->label('Descrizione')
+                            //         ->maxLength(255),
+                            // ]),
+                        Select::make('product_id')
+                            ->label('Prodotto')
+                            ->relationship('product', 'code')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([
+                                TextInput::make('code')
+                                    ->label('Codice Prodotto')
+                                    ->required()
+                                    ->maxLength(255),
+                                TextInput::make('description')
+                                    ->label('Descrizione')
+                                    ->maxLength(255),
+                            ]),
+                        TextInput::make('quantity')->label('Quantità')
+                            ->visible(fn(Get $get) => $get('quantity')>0)
+                            ->required()
+                            ->numeric(),
+                    ]),
+                Fieldset::make('Tempi di produzione')->columns(3)
+                    ->schema([
+                        DateTimePicker::make('start_at')
+                            ->label('Inizio lavorazione')
+                            ->seconds(false)
+                            ->readOnly((fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin'))),
+                        DateTimePicker::make('end_at')
+                            ->label('Fine lavorazione')
+                            ->after('start_at')
+                            ->seconds(false)
+                            ->readOnly(fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin')),
+                        TextInput::make('total_minutes')
+                            ->label('Totale ore lavorazione')
+                            ->numeric(),
+                    ]),
+                Section::make('Registro tempi lavorazione')->columns(1)->collapsed()->collapsible()
+                    ->schema([
+                        Repeater::make('recordsTime')->label('Registro tempi lavorazione')->columns(2)->deletable(false)->addable(false)->reorderable(false)->relationship()
+                            ->schema([
+                                DateTimePicker::make('start_at')
+                                    ->label('Ora inizio lavorazione')
+                                    ->seconds(false)
+                                    ->readOnly((fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin'))),
+                                DateTimePicker::make('end_at')
+                                    ->label('Ora fine lavorazione')
+                                    ->after('start_at')
+                                    ->seconds(false)
+                                    ->readOnly(fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin')),
+                            ]),
+                    ]),
+                // Hidden::make('qunatity'),
+                Hidden::make('paused'),
+                Actions::make([
+                    Action::make('Inizio Lavorazione')
+                        ->icon('heroicon-m-clock')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->disabled(fn(Get $get) => $get('start_at') !== null)
+                        ->action(function (Set $set, Get $get , $state) {
+                            $set('start_at', now());
+                            $records = $get('recordsTime');
+                            end($records);         // move the internal pointer to the end of the array
+                            $key = key($records);                
+                            end($records);         // move the internal pointer to the end of the array
+                            $key = key($records);
+                            if(count($records)==0){
+                                $newRec = [];
+                                $newRec['start_at'] = null;
+                                $newRec['end_at'] = null;
+                                array_push($records, $newRec);
+                                end($records);         // move the internal pointer to the end of the array
+                                $key = key($records);
+                            }
+                            $records[$key]['start_at'] = now()->format('Y-m-d H:i');
+                            // dd($records);
+                            $set('recordsTime', $records);
+                        }),
+                    Action::make('Pausa')
+                        ->icon('heroicon-m-pause-circle')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(fn(Get $get) => !$get('paused'))
+                        ->disabled(fn(Get $get) => $get('start_at')==null)
+                        ->action(function (Set $set, Get $get, $state) {
+                            $records = $get('recordsTime');
+                            end($records);         // move the internal pointer to the end of the array
+                            $key = key($records);
+                            $records[$key]['end_at'] = now()->format('Y-m-d H:i');
+                            $newRec = last($records);
+                            $newRec['start_at'] = null;
+                            $newRec['end_at'] = null;
+                            array_push($records, $newRec);
+;                            // dd($records);
+                            $set('recordsTime', $records);
+                            $set('paused', true);
+                            // dd($get('recordsTime'));
+                        }),
+                    Action::make('Riprendi')
+                        ->icon('heroicon-m-play-circle')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(fn(Get $get) => $get('paused'))
+                        ->disabled(fn(Get $get) => $get('start_at')==null)
+                        ->action(function (Set $set, Get $get, $state) {
+                            $records = $get('recordsTime');
+                            end($records);         // move the internal pointer to the end of the array
+                            $key = key($records);
+                            if (!empty($records[$key]['start_at'])){
+                                $newRec = last($records);
+                                $newRec['start_at'] = null;
+                                $newRec['end_at'] = null;
+                                array_push($records, $newRec);
+                                end($records);         // move the internal pointer to the end of the array
+                                $key = key($records);
+                            }
+                            $records[$key]['start_at'] = now()->format('Y-m-d H:i');
+                            // dd($records);
+                            $set('recordsTime', $records);
+                            $set('paused', false);
+                            // dd($get('recordsTime'));
+                        }),
+                    Action::make('Fine Lavorazione')
+                        ->icon('heroicon-m-clock')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->disabled(fn(Get $get) => $get('start_at')==null)
+                        ->schema([
+                            TextInput::make('quantity')->label('Quantità')
+                                ->required()
+                                ->numeric(),
+                        ])
+                        ->action(function (array $data, Set $set, Get $get, $state, EditRecord $livewire) {
+                            $set('quantity', $data['quantity']);
+                            $set('end_at', now());
+                            $records = $get('recordsTime');
+                            end($records);         // move the internal pointer to the end of the array
+                            $key = key($records);
+                            $records[$key]['end_at'] = now()->format('Y-m-d H:i');
+;                            // dd($records);
+                            $set('recordsTime', $records);
+                            $livewire->save();
+                            // $this->saveOrCreate();
+                        }),
+                ])->fullWidth(),
+            ]);
+    }
+}

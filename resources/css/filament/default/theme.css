@@ -1,0 +1,35 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+@source '../../../../vendor/bezhansalleh/filament-panel-switch/resources/views/**/*.blade.php';
+
+.row-group-lvl-1 {
+    background-color: var(--color-gray-400);
+    font-weight: var(--font-weight-bold);
+    --spacing: .18rem;
+}
+.row-group-lvl-2 {
+    background-color: var(--color-gray-300);
+    font-weight: var(--font-weight-semibold);
+    --spacing: .18rem;
+}
+.row-group-lvl-3 {
+    background-color: var(--color-gray-200);
+    font-weight: var(--font-weight-semibold);
+    --spacing: .18rem;
+}
+.row-group-lvl-4 {
+    background-color: var(--color-gray-100);
+    font-weight: var(--font-weight-semibold);
+    --spacing: .18rem;
+}
+.row-group-lvl-5 {
+    background-color: var(--gray-50);
+    font-weight: var(--font-weight-semibold);
+    --spacing: .18rem;
+}
+.row-group-lvl-99 {
+    --spacing: .18rem;
+}

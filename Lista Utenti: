@@ -1,0 +1,16 @@
+Lista Utenti:
+1 - luca.rossini@fiorepelletteria.app - luca@fioreApp [ADMIN]
+2 - monia.manduchi@fiorepelletteria.app - monia@fioreApp [OPERATORE]
+3 - silvia.palazzini@fiorepelletteria.app - silvia@fioreApp [OPERATORE]
+4 - fiorello@fiorepelletteria.app - fiorello@fioreApp [OPERATORE]
+
+Modifiche 30/10/2025:
+- Inserita Categoria "Tipi Lavorazione" + Migliorie su inserimento nuove lavorazioni
+- Nuova Gestione Ordini Clienti con lista prodotti 
+- Nuova Gesione Ordini di Lavorazione che preleva direttamente da Ordini Cliente
+- Al salvataggio dell'Ordine di Lavorazione parte il countdown
+- Inseriti i pulsanti di "PAUSA" - "RIPRENDI" - "Dichiara Chiusa" Lavorazione
+- Nuova visualizzazione in tabella con possibilità di filtri
+- Statistiche adeguate alla nuova struttura dei dati
+Rimane:
+- Export statistiche lavorazione (lo affronteremo quando inizieranno ad esserci un pò di dati)

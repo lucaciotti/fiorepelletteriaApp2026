@@ -1,0 +1,126 @@
+sail composer config minimum-stability dev
+sail composer config prefer-stable true
+ 
+sail npm install
+
+sail artisan make:model Customer -m
+sail artisan make:model ShippingAddress -m
+sail artisan make:model Task -m
+sail artisan make:model TaskRow -m
+sail artisan make:model AttributeCategory -m
+sail artisan make:model Attribute -m
+sail artisan make:model TaskAttributeValue -m
+
+sail artisan make:filament-panel app
+
+sail artisan make:filament-resource Customer
+
+sail artisan make:filament-page Settings
+
+//Authorization
+public static function canAccess(): bool
+{
+    return auth()->user()->canManageSettings();
+}
+//USER
+public function canAccessPanel(Panel $panel): bool
+    {
+        if ($panel->getId() === 'admin') {
+            return str_ends_with($this->email, '@yourdomain.com') && $this->hasVerifiedEmail();
+        } else if ($panel->getId() === 'employer') {
+            return str_ends_with($this->email, '@yourdomain.com') && $this->hasVerifiedEmail();
+        }
+
+        return false; // default case, in case $panel->getId() is neither 'admin' nor 'owner'
+    }
+
+
+sail up -d
+sail artisan migrate
+sail npm install
+
+sail composer require filament/filament:"^3.3" -W
+sail artisan vendor:publish --tag=filament-config
+sail artisan vendor:publish --tag=filament-panels-translations
+sail artisan filament:install --panels
+sail artisan make:filament-panel config
+sail artisan make:filament-user
+
+sail artisan make:notifications-table
+sail artisan migrate
+sail artisan queue:listen
+Notification::make()->title('Ordine modificato')->sendToDatabase(User::all());
+
+
+
+sail composer require joaopaulolndev/filament-edit-profile
+sail artisan vendor:publish --tag="filament-edit-profile-views"
+sail artisan vendor:publish --tag="filament-edit-profile-translations"
+sail artisan vendor:publish --tag="filament-edit-profile-migrations"
+sail artisan migrate
+ 
+sail composer require bezhansalleh/filament-shield
+sail artisan vendor:publish --tag="filament-shield-config"
+sail artisan shield:setup
+sail artisan shield:super-admin
+sail artisan shield:install config
+sail artisan vendor:publish --tag="filament-shield-translations"
+
+sail composer require tomatophp/filament-users
+sail artisan vendor:publish --tag="filament-users-config"
+sail artisan filament-user:publish
+
+sail composer require bezhansalleh/filament-panel-switch
+*** theme modify
+sail npm run build
+
+sail composer require gboquizosanchez/filament-log-viewer
+sail artisan vendor:publish --provider="Boquizo\FilamentLogViewer\FilamentLogViewerServiceProvider"
+
+sail composer require filafly/brisk
+sail artisan make:filament-theme
+***
+sail npm run build
+
+sail composer require devaslanca/fluent
+//auth.json
+luca.ciotti@gmail.com
+1a2357a7-f5a4-4f1a-b626-865a551861ad
+//composer config http-basic.filament-fluent.composer.sh ${USERNAME} ${LICENSE}
+sail artisan vendor:publish --tag=fluent-config
+sail artisan vendor:publish --tag=fluent-translations
+sail artisan vendor:publish --tag=fluent-migrations
+sail artisan migrate
+
+
+sail composer require owen-it/laravel-auditing
+sail artisan vendor:publish --provider "OwenIt\Auditing\AuditingServiceProvider" --tag="config"
+sail artisan vendor:publish --provider "OwenIt\Auditing\AuditingServiceProvider" --tag="migrations"
+sail artisan migrate
+
+sail composer require tapp/filament-auditing:"^3.0"
+sail artisan vendor:publish --tag="filament-auditing-config"
+
+
+sail composer require doctrine/dbal --dev
+
+// Dynamic attributes
+https://stackoverflow.com/questions/57500648/laravel-orm-dynamic-model-attributes
+https://stackoverflow.com/questions/52551341/laravel-model-dynamic-attribute
+https://medium.com/@zulfikarditya/using-php-enums-in-laravel-12-a-comprehensive-guide-af75689f88e8
+sail artisan make:enum Enums/AttributeTypes
+
+
+
+
+
+# queue
+sail artisan queue:listen --queue=importFiles --timeout=0
+
+# resources
+sail artisan make:filament-resource Order --model --migration
+sail artisan make:filament-resource TempTask --nested
+sail artisan make:filament-relation-manager TempTaskResource tempTaskRows
+
+# page ManageRelatedRecords
+sail artisan make:filament-page ManageTaskImportFileTempTask --resource=TaskImportFileResource --type=ManageRelatedRecords

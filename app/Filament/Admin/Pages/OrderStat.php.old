@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use App\Models\WorkOrder;
+use BackedEnum;
+use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class OrderStat extends Page implements HasTable
+{
+    use InteractsWithTable;
+
+    protected string $view = 'filament.pages.order-stat';
+    protected static ?string $model = WorkOrder::class;
+
+    protected static string | UnitEnum | null $navigationGroup = 'Ordini';
+    protected static ?int $navigationSort = 1;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+   
+    public static ?string $title = 'Statistiche Ordini';
+
+    public function table(Table $table) {
+        return $table
+            ->query(WorkOrder::query())
+            ->modifyQueryUsing(fn(Builder $query) => $query->where('end_at', '!=', null))
+            ->columns([
+            TextColumn::make('ord_num')
+                ->label('Commessa')
+                ->searchable(),
+            TextColumn::make('processType.name')
+                ->label('Tipo Lavorazione')
+                ->searchable(),
+            TextColumn::make('operator.name')
+                ->label('Operatore')
+                ->searchable(),
+            TextColumn::make('customer.name')
+                ->label('Cliente')
+                ->searchable(),
+            TextColumn::make('product.name')
+                ->label('Prodotto')
+                ->searchable(),
+            TextColumn::make('quantity')
+                ->label('Qta')
+                ->numeric()
+                ->sortable(),
+            TextColumn::make('total_minutes')
+                ->label('Tempo Lavorazione (min.)')
+                ->numeric()
+                ->sortable(),
+            ])
+            ->filters([])
+            ->recordActions([
+                // ViewAction::make(),
+                // EditAction::make(),
+            ])
+            ->toolbarActions([
+                // BulkActionGroup::make([
+                //     DeleteBulkAction::make(),
+                // ]),
+            ]);
+    }
+}
