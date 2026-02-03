@@ -5,6 +5,7 @@ namespace App\Providers;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Table;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\ServiceProvider;
 use TomatoPHP\FilamentUsers\Filament\Resources\Users\Schemas\UserForm;
@@ -66,5 +67,9 @@ class AppServiceProvider extends ServiceProvider
                         ->maxLength(255),
                 ]),
         ]);
+        Table::configureUsing(
+            fn(Table $table) => $table
+                ->defaultPaginationPageOption(25)
+        );
     }
 }

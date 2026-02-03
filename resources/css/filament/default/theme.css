@@ -33,3 +33,128 @@
 .row-group-lvl-99 {
     --spacing: .18rem;
 }
+
+/* .fi-ta-cell,
+.fi-input,
+.fi-select-input,
+.fi-ta-cell div {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    border-radius: 0% !important;
+}
+
+.flex {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    gap: 3px !important;
+
+}
+
+.fi-tabs {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+}
+
+.fi-header-heading {
+    font-size: 1.5rem !important;
+} */
+
+:root {
+    --radius-3xl: 1rem;
+}
+
+.fi-ta-header-ctn {
+    --spacing: 0.18rem;
+}
+
+.fi-ta-header-heading {
+    --spacing: 0.15rem;
+}
+
+.fi-ta-row {
+    --spacing: 0.1rem;
+}
+
+.fi-ta-text {
+    --spacing: 0.18rem;
+}
+
+.fi-ta-toggle {
+    --spacing: 0.18rem;
+}
+
+.fi-ta-selection-cell {
+    --spacing: 0.20rem;
+}
+
+.fi-ta-header-cell {
+    --spacing: 0.18rem;
+}
+
+.fi-pagination {
+    --spacing: 0.18rem;
+}
+
+.fi-modal-header {
+    --spacing: 0.18rem;
+}
+
+.fi-modal-content {
+    --spacing: 0.18rem;
+}
+
+.fi-modal-close-btn {
+    /* --spacing: 0.18rem; */
+    top: calc(var(--spacing) * 4);
+}
+
+.fi-fo-repeater-item-header {
+    --spacing: 0.18rem;
+}
+
+.fi-fo-repeater-item-content {
+    --spacing: 0.18rem;
+}
+
+/* .fi-fo-field {
+    --spacing: 0.18rem;
+}
+
+.fi-btn {
+    --spacing: 0.18rem;
+}
+
+.fi-sidebar {
+    --spacing: 0.18rem;
+}
+
+.fi-topbar {
+    --spacing: 0.20rem;
+}
+
+.fi-dropdown {
+    --spacing: 0.25rem;
+}
+
+.fi-dropdown-panel {
+    --spacing: 0.18rem;
+} */
+
+.fi-icon-btn {
+    --spacing: 0.25rem;
+}
+
+.fi-icon {
+    --spacing: 0.25rem;
+}
+
+.fi-ta-cell,
+/* .fi-input, */
+/* .fi-select-input, */
+/* .fi-ta-toogle, */
+.fi-ta-cell div {
+    /* padding-top: calc(var(--spacing)*2) !important; */
+    padding-bottom: calc(var(--spacing)*2) !important;
+}

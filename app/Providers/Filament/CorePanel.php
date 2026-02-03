@@ -28,7 +28,7 @@ class CorePanel extends Panel
             ->viteTheme('resources/css/filament/default/theme.css')
             ->defaultThemeMode(ThemeMode::Light)
             ->brandLogo(asset('images/logo.png'))
-            ->brandName('Fiore Pelletteria App')
+            ->brandName('App 2026')
             ->brandLogoHeight('8rem')
             ->sidebarCollapsibleOnDesktop()
             ->unsavedChangesAlerts()
@@ -36,7 +36,7 @@ class CorePanel extends Panel
             ->maxContentWidth(Width::Full)
             ->login()
             ->colors([
-                'primary' => Color::Red,
+                'primary' => Color::Slate[800],
             ])
             // ->pages([
             //     Pages\Dashboard::class,

@@ -29,12 +29,20 @@
         <img
             alt="{{ __('filament-panels::layout.logo.alt', ['name' => $brandName]) }}"
             src="{{ $logo }}"
+            {{-- style="float: left;" --}}
             {{
                 $attributes
                     ->class([$getLogoClasses($isDarkMode)])
-                    ->style([$logoStyles])
+                    ->style([$logoStyles, "float: left;"])
             }}
         />
+        <div style="float: right; font-size: 1.0rem; padding-top: 1.2rem;" {{ $attributes->class([
+            $getLogoClasses($isDarkMode),
+            ])
+            }}
+            >
+            {{ $brandName }}
+        </div>
     @else
         <div
             {{
