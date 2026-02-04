@@ -69,19 +69,25 @@ class ProductForm
                                 TextInput::make('position')->readOnly(true)->live(),
                                 Select::make('process_type_id')
                                     ->label('Lavorazione')
-                                    ->relationship('processType', 'name')
+                                    ->relationship('processType', 'description')
                                     ->searchable()
                                     ->preload()
-                                    ->required(),
-                                    // ->createOptionForm([
-                                    //     TextInput::make('code')
-                                    //         ->label('Codice Prodotto')
-                                    //         ->required()
-                                    //         ->maxLength(255),
-                                    //     TextInput::make('description')
-                                    //         ->label('Descrizione')
-                                    //         ->maxLength(255),
-                                    // ]),
+                                    ->required()
+                                    ->createOptionForm([                        
+                                        TextInput::make('description')->label('Descrizione')
+                                            ->required(),
+                                        Select::make('process_type_category_id')
+                                            ->label('Categoria di Lavorazione')
+                                            ->relationship('category', 'name')
+                                            ->searchable()
+                                            ->preload()
+                                            ->createOptionForm([
+                                                TextInput::make('name')
+                                                    ->label('Nome Categoria')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                            ]),
+                                    ]),
                             ])->orderColumn('position'),
                     ])
             ]);

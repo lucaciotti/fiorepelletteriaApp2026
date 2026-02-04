@@ -11,8 +11,6 @@ class ProcessTypeInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('code'),
-                TextEntry::make('name'),
                 TextEntry::make('description'),
                 TextEntry::make('created_at')
                     ->dateTime()

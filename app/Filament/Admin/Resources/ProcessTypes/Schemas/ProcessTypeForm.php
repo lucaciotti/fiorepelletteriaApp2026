@@ -12,9 +12,7 @@ class ProcessTypeForm
     {
         return $schema
             ->components([
-                TextInput::make('code')->label('Codice')
-                    ->required(),
-                TextInput::make('name')->label('Nome')
+                TextInput::make('description')->label('Descrizione')
                     ->required(),
                 Select::make('process_type_category_id')
                     ->label('Categoria di Lavorazione')
@@ -27,8 +25,6 @@ class ProcessTypeForm
                             ->required()
                             ->maxLength(255),
                     ]),
-                TextInput::make('description')->label('Descrizione')
-                    ->required(),
             ]);
     }
 }

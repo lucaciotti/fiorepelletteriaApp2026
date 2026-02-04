@@ -26,7 +26,7 @@ class ProcessTypeResource extends Resource
     protected static string | UnitEnum | null $navigationGroup = 'Anagrafiche';
     protected static ?int $navigationSort = 4;
     
-    protected static ?string $recordTitleAttribute = 'code';
+    protected static ?string $recordTitleAttribute = 'description';
     protected static ?string $modelLabel = 'tipo lavorazione';
     protected static ?string $pluralModelLabel = 'tipi lavorazione';
 

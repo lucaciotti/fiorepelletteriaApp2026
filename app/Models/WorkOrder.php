@@ -28,7 +28,7 @@ class WorkOrder extends Model
 
     public function getFulldescrAttribute()
     {
-        return '[' . $this->processType->name . '] del ' . (new Carbon($this->start_at))->format('d/m/Y') . ' di: ' . $this->operator->name;
+        return '[' . $this->processType->description . '] del ' . (new Carbon($this->start_at))->format('d/m/Y') . ' di: ' . $this->operator->name;
     }
 
     public function getOrdrifAttribute()

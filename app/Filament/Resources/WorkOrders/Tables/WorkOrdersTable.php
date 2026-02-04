@@ -115,7 +115,7 @@ class WorkOrdersTable
                     ->preload(),
                 SelectFilter::make('process_type_id')->label('Lavorazione')
                     ->searchable()
-                    ->options(fn(): array => ProcessType::query()->pluck('code', 'id')->all()),
+                    ->options(fn(): array => ProcessType::query()->pluck('description', 'id')->all()),
             ], layout: FiltersLayout::Modal)->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()

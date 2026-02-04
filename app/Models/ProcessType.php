@@ -17,7 +17,8 @@ class ProcessType extends Model
 
     public function getFullDescrAttribute()
     {
-        return $this->name . ' - ' . $this->description;
+        // return $this->name . ' - ' . $this->description;
+        return $this->description;
     }
 
 

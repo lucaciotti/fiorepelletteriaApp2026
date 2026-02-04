@@ -19,12 +19,6 @@ class ProcessTypesTable
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Codice')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('name')->label('Nome')
-                    ->sortable()
-                    ->searchable(),
                 TextColumn::make('description')->label('Descrizione')
                     ->sortable()
                     ->searchable(),
