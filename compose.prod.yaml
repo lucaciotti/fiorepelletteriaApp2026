@@ -11,10 +11,10 @@ services:
       # The ':ro' option mounts it as read-only in the 'web' service because Nginx only needs to read these files.
       # The 'php-fpm' service mounts the same volume without ':ro' to allow write operations.
       # -----------------------------------------------------------
-      - laravel-storage-production:/var/www/storage:ro
-      - laravel-public:/var/www/public:ro
+      - app2026-storage-production:/var/www/storage:ro
+      - app2026-public:/var/www/public:ro
     networks:
-      - laravel-production
+      - app2026-production
     ports:
       # Map port 80 inside the container to the port specified by 'NGINX_PORT' on the host machine.
       # -----------------------------------------------------------
@@ -33,12 +33,12 @@ services:
       dockerfile: ./docker/php-fpm/Dockerfile
     restart: unless-stopped
     volumes:
-      - laravel-public:/var/www/public  # Mount built public assets to ensure the manifest.json and hashed files match between Nginx and PHP-FPM
-      - laravel-storage-production:/var/www/storage  # Mount the storage volume
+      - app2026-public:/var/www/public  # Mount built public assets to ensure the manifest.json and hashed files match between Nginx and PHP-FPM
+      - app2026-storage-production:/var/www/storage  # Mount the storage volume
     env_file:
       - .env
     networks:
-      - laravel-production
+      - app2026-production
     healthcheck:
       test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
       interval: 10s
@@ -62,9 +62,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USERNAME:-laravel}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secret}
     volumes:
-      - postgres-data-production:/var/lib/postgresql/data
+      - app2026-postgres-production:/var/lib/postgresql/data
     networks:
-      - laravel-production
+      - app2026-production
     # Health check for PostgreSQL
     # -----------------------------------------------------------
     # Health checks allow Docker to determine if a service is operational.
@@ -81,7 +81,7 @@ services:
     image: redis:alpine
     restart: unless-stopped  # Automatically restart unless the service is explicitly stopped
     networks:
-      - laravel-production
+      - app2026-production
     # Health check for Redis
     # -----------------------------------------------------------
     # Checks if Redis is responding to the 'PING' command.
@@ -99,9 +99,9 @@ networks:
   # This custom network allows all services within it to communicate using their service names as hostnames.
   # For example, 'php-fpm' can connect to 'postgres' by using 'postgres' as the hostname.
   # -----------------------------------------------------------
-  laravel-production:
+  app2026-production:
 
 volumes:
-  postgres-data-production:
-  laravel-storage-production:
-  laravel-public:
+  app2026-postgres-production:
+  app2026-storage-production:
+  app2026-public:
