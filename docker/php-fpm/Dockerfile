@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev \
     libzip-dev \
     zlib1g-dev \
-    libpng-dev 
+    libpng-dev
 RUN docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     pdo_pgsql \
