@@ -59,9 +59,19 @@ class WorkOrderForm
                         ->options(function(Get $get) {
                             $orderRow = OrderRow::where('id', $get('order_row_id'))->first();
                             if ($orderRow){
-                                $processTypeIds = ProductProcessType::where('product_id', $orderRow->product_id)->get()->pluck('process_type_id');
-                                if (count($processTypeIds)>0){
-                                    return ProcessType::whereIn('id', $processTypeIds)->get()->pluck('full_descr', 'id');
+                                // $processTypeIds = ProductProcessType::where('product_id', $orderRow->product_id)->orderBy('position')->get()->pluck('process_type_id');
+                                // if (count($processTypeIds)>0){
+                                //     dd(ProcessType::whereIn('id', $processTypeIds)->get()->pluck('full_descr', 'id'));
+                                //     return ProcessType::whereIn('id', $processTypeIds)->get()->pluck('full_descr', 'id');
+                                // }
+                                $processTypes = ProductProcessType::where('product_id', $orderRow->product_id)->orderBy('position')->with('processType')->get();
+                                if (count($processTypes)>0){
+                                    $aReturn=[];
+                                    foreach ($processTypes as $value) {
+                                        $aReturn[$value->processType->id] = $value->position." - ". $value->processType->description;
+                                    }
+                                    // dd($aReturn);
+                                    return $aReturn;
                                 }
                             }
                             return ProcessType::all()->pluck('full_descr', 'id');
