@@ -25,8 +25,14 @@ class ListWorkOrders extends ListRecords
         return [
             'Tutti' => Tab::make(),
             'In Esecuzione' => Tab::make()
-                ->modifyQueryUsing(fn(Builder $query) => $query->where('end_at', null)->where('paused', false))
-                ->badge(WorkOrder::query()->where('end_at', null)->where('paused', false)->count())
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('end_at', null)->where(function ($query) {
+                        $query->where('paused', false)
+                            ->orWhere('paused', null);
+                    }))
+                ->badge(WorkOrder::query()->where('end_at', null)->where(function ($query) {
+                        $query->where('paused', false)
+                            ->orWhere('paused', null);
+                    })->count())
                 ->badgeColor('danger'),
             'In Pausa!' => Tab::make()
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('end_at', null)->where('paused', true))
