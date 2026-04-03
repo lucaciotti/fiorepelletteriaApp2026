@@ -18,6 +18,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -34,6 +35,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\StatsExport;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use pxlrbt\FilamentExcel\Actions\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
@@ -45,6 +48,9 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
     use InteractsWithActions;
     use InteractsWithTable;
     use InteractsWithSchemas;
+
+    private $records;
+    private $columns;
 
     protected $listeners = [
         'tableRefresh' => '$refresh',
@@ -60,7 +66,10 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
 
         $records = $this->_buildRecords($originalGroupColumns);
         $columns = $this->_buildColumns($originalGroupColumns);
-        
+        $this->records = $records;
+        $this->columns = $columns;
+
+
         $table
         ->records(fn(): Collection => $records)
         ->recordClasses(fn($record) => match ($record['lvl']) {
@@ -86,11 +95,15 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
         ->recordActions([
         ])
         ->toolbarActions([
-            // ExportAction::make()->exports([
-            //     ExcelExport::make('table')->fromTable()->only([
-            //         'customer',
-            //     ])->ignoreFormatting()->modifyQueryUsing(fn($query) => dd($query)),
-            // ]),
+            Action::make('exportExcel')
+                ->label('Esporta Statistica')
+                ->icon(Heroicon::ArrowDownTray)
+                ->action(function (Table $table) {
+                    // $table->getVisibleColumns()
+                    $date = Carbon::now();
+                    $exportName = 'Stats_' . $date->format('Ymd') . '_' . $date->format('Hmi') . '.xlsx';
+                    return Excel::download(new StatsExport($this->records, $this->columns), $exportName);
+                }),
         ]);
 
         return $table;
