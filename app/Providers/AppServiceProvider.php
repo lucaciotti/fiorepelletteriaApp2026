@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use BezhanSalleh\PanelSwitch\PanelSwitch;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Livewire\Notifications;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables\Table;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\ServiceProvider;
@@ -67,9 +70,28 @@ class AppServiceProvider extends ServiceProvider
                         ->maxLength(255),
                 ]),
         ]);
-        Table::configureUsing(
-            fn(Table $table) => $table
-                ->defaultPaginationPageOption(25)
-        );
+
+        Table::configureUsing(function (Table $table): void {
+            $table
+                ->reorderableColumns()
+                ->striped()
+                ->filtersTriggerAction(
+                    fn(Action $action) => $action
+                        ->slideOver()
+                        ->button(),
+                )
+                // ->columnManagerTriggerAction(
+                //     fn (Action $action) => $action
+                //         ->slideOver()
+                //         ->hiddenLabel(),
+                // )
+                // ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+                ->paginationPageOptions([25, 50, 100])
+                ->defaultPaginationPageOption(50)
+                ->deferFilters(false)
+                ->deferColumnManager(false);
+        });
+
+        Notifications::alignment(Alignment::Center);
     }
 }
