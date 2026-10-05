@@ -7,6 +7,8 @@ use App\Models\OrderRow;
 use App\Models\ProcessType;
 use App\Models\Product;
 use App\Models\ProductProcessType;
+use App\Models\WorkOrder;
+use App\Models\WorkOrdersRecordTime;
 use DateTime;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
@@ -82,7 +84,8 @@ class WorkOrderForm
                         ->preload()
                         ->required(),
                     TextInput::make('quantity')->label('Quantità')
-                        ->visible(fn(Get $get) => $get('quantity')>0)
+                        // ->visible(fn(Get $get) => $get('quantity')>0)
+                        ->visible(fn(Get $get) => $get('end_at')!=null)
                         ->required()
                         ->numeric(),
                 ]),
@@ -156,23 +159,38 @@ class WorkOrderForm
                         ->requiresConfirmation()
                         ->visible(fn(Get $get) => !$get('paused'))
                         ->disabled(fn(Get $get) => $get('end_at') != null)
-                        ->action(function (Set $set, Get $get, $state, EditRecord $livewire) {
-                            $records = $get('recordsTime');
-                            end($records);         // move the internal pointer to the end of the array
-                            $key = key($records);
-                            if(count($records)==1){
-                                $records[$key]['start_at'] = $get('start_at');
+                        ->action(function (Set $set, Get $get, WorkOrder $record, EditRecord $livewire) {
+                            // Per prima cosa prendo ultimo recordTime
+                            $openRecordTime = WorkOrdersRecordTime::where('work_order_id', $record->id)
+                                ->where('start_at','!=', null)
+                                ->where('end_at', null)->first();
+                            if (!$openRecordTime) {
+                                WorkOrdersRecordTime::create([
+                                    'work_order_id'=> $record->id,
+                                    'start_at' => $get('start_at'),
+                                    'end_at' => now()->format('Y-m-d H:i'),
+                                ]);
+                            } else {
+                                $openRecordTime->end_at = now()->format('Y-m-d H:i');
+                            $openRecordTime->save();
                             }
-                            $records[$key]['end_at'] = now()->format('Y-m-d H:i');
-                            $newRec = last($records);
-                            $newRec['start_at'] = null;
-                            $newRec['end_at'] = null;
-                            array_push($records, $newRec);
-;                            // dd($records);
-                            $set('recordsTime', $records);
-                            $set('paused', true);
-                            // dd($get('recordsTime'));
-                            $livewire->save();
+                            return redirect(request()->header('Referer'));
+//                             $records = $get('recordsTime');
+//                             end($records);         // move the internal pointer to the end of the array
+//                             $key = key($records);
+//                             if(count($records)==1){
+//                                 $records[$key]['start_at'] = $get('start_at');
+//                             }
+//                             $records[$key]['end_at'] = now()->format('Y-m-d H:i');
+//                             $newRec = last($records);
+//                             $newRec['start_at'] = null;
+//                             $newRec['end_at'] = null;
+//                             array_push($records, $newRec);
+// ;                            // dd($records);
+//                             $set('recordsTime', $records);
+//                             $set('paused', true);
+//                             // dd($get('recordsTime'));
+//                             $livewire->save();
                         }),
                     Action::make('Riprendi')
                         ->icon('heroicon-m-play-circle')

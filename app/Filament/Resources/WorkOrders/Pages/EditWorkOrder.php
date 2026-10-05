@@ -27,6 +27,7 @@ class EditWorkOrder extends EditRecord
             return Action::make('create')
                 ->label(__('filament-panels::resources/pages/create-record.form.actions.create.label'))
                 ->modalDescription('Non è stata configurato "Inizio Lavorazione"! Proseguire?')
+                ->visible($this->data['end_at'] != null)
                 ->requiresConfirmation()
                 ->action(fn() => $this->save())
                 ->keyBindings(['mod+s']);
@@ -35,6 +36,7 @@ class EditWorkOrder extends EditRecord
             return Action::make('create')
                 ->label(__('filament-panels::resources/pages/create-record.form.actions.create.label'))
                 ->modalDescription('Non è stata configurato "Fine Lavorazione"! Proseguire?')
+                ->visible($this->data['end_at'] != null)
                 ->requiresConfirmation()
                 ->action(fn() => $this->save())
                 ->keyBindings(['mod+s']);
