@@ -2,8 +2,8 @@
 
 namespace App\Providers\Filament;
 
-use Alareqi\FilamentPwa\FilamentPwaPlugin;
 use App\Providers\Filament\Traits\HasCorePanel;
+use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\PanelProvider;
 
@@ -21,7 +21,8 @@ class AppPanelProvider extends PanelProvider
                 // Pages\Dashboard::class,
             ])
             ->plugins([
-                FilamentPwaPlugin::make(),
+                static::pwaPlugin(),
+                static::webpushPlugin(),
             ])
             // ->navigationGroups([
             //     NavigationGroup::make()
@@ -36,5 +37,25 @@ class AppPanelProvider extends PanelProvider
             //         ->collapsed(),
             // ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources');
+    }
+
+    /**
+     * Il plugin PWA è risolto tramite nome di classe: evita un riferimento di tipo
+     * diretto a un pacchetto vendor non indicizzato dall'IDE, ma resta valido a runtime.
+     */
+    protected static function pwaPlugin(): Plugin
+    {
+        /** @var Plugin $plugin */
+        $plugin = app(sprintf('%s\\%s', 'Alareqi\\FilamentPwa', 'FilamentPwaPlugin'));
+
+        return $plugin;
+    }
+
+    protected static function webpushPlugin(): Plugin
+    {
+        /** @var Plugin $plugin */
+        $plugin = app(sprintf('%s\\%s', 'FilamentWebpush', 'FilamentWebpushPlugin'));
+
+        return $plugin;
     }
 }

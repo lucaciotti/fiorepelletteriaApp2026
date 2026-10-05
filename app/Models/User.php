@@ -10,14 +10,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-    use HasRoles;
+    use HasFactory, HasPushSubscriptions, Notifiable;
 
+    use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -62,7 +63,7 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         if ($panel->getId() === 'config' || $panel->getId() === 'admin') {
-            return $this->hasRole('admin') ||  $this->hasRole('super_admin');
+            return $this->hasRole('admin') || $this->hasRole('super_admin');
         }
 
         return true;
