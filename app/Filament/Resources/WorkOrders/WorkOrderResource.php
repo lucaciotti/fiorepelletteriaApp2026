@@ -6,9 +6,7 @@ use App\Filament\Resources\WorkOrders\Pages\CreateWorkOrder;
 use App\Filament\Resources\WorkOrders\Pages\EditWorkOrder;
 use App\Filament\Resources\WorkOrders\Pages\ListWorkOrders;
 use App\Filament\Resources\WorkOrders\Pages\ViewWorkOrder;
-use App\Filament\Resources\WorkOrders\RelationManagers\RecordTimeRelationManager;
 use App\Filament\Resources\WorkOrders\Schemas\WorkOrderForm;
-use App\Filament\Resources\WorkOrders\Schemas\WorkOrderInfolist;
 use App\Filament\Resources\WorkOrders\Tables\WorkOrdersTable;
 use App\Models\WorkOrder;
 use BackedEnum;
@@ -52,7 +50,7 @@ class WorkOrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RecordTimeRelationManager::class,
+            //
         ];
     }
 
