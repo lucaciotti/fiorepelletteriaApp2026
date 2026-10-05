@@ -104,34 +104,7 @@ class EditWorkOrder extends EditRecord
             return;
         }
 
-        $keptIds = [];
-
-        foreach ($rows as $row) {
-            if (blank($row['start_at'] ?? null)) {
-                continue;
-            }
-
-            $attributes = [
-                'start_at' => $row['start_at'],
-                'end_at' => $row['end_at'] ?? null,
-            ];
-
-            $segment = filled($row['id'] ?? null)
-                ? $record->recordsTime()->whereKey($row['id'])->first()
-                : null;
-
-            if ($segment) {
-                $segment->update($attributes);
-            } else {
-                $segment = $record->recordsTime()->create($attributes);
-            }
-
-            $keptIds[] = $segment->id;
-        }
-
-        $record->recordsTime()->whereNotIn('id', $keptIds)->delete();
-
-        app(WorkOrderTimerService::class)->recomputeTotalMinutes($record);
+        app(WorkOrderTimerService::class)->syncSegments($record, $rows);
 
         $record->refresh();
         $this->fillForm();

@@ -154,6 +154,45 @@ class WorkOrderTimerService
     }
 
     /**
+     * Sincronizza i segmenti inseriti/modificati/eliminati dal popup admin e ricalcola i minuti.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public function syncSegments(WorkOrder $workOrder, array $rows): void
+    {
+        DB::transaction(function () use ($workOrder, $rows): void {
+            $keptIds = [];
+
+            foreach ($rows as $row) {
+                if (blank($row['start_at'] ?? null)) {
+                    continue;
+                }
+
+                $attributes = [
+                    'start_at' => $row['start_at'],
+                    'end_at' => $row['end_at'] ?? null,
+                ];
+
+                $segment = filled($row['id'] ?? null)
+                    ? $workOrder->recordsTime()->whereKey($row['id'])->first()
+                    : null;
+
+                if ($segment) {
+                    $segment->update($attributes);
+                } else {
+                    $segment = $workOrder->recordsTime()->create($attributes);
+                }
+
+                $keptIds[] = $segment->id;
+            }
+
+            $workOrder->recordsTime()->whereNotIn('id', $keptIds)->delete();
+
+            $this->recomputeTotalMinutes($workOrder);
+        });
+    }
+
+    /**
      * Ricalcola `total_minutes` di ogni segmento chiuso e il totale della lavorazione.
      */
     public function recomputeTotalMinutes(WorkOrder $workOrder): float
