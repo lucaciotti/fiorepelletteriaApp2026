@@ -1,0 +1,9 @@
+# Configurazione yamllint: il compose usa commenti/righe lunghe per documentazione.
+extends: default
+
+rules:
+  line-length: disable
+  comments-indentation: disable
+  document-start: disable
+  truthy:
+    allowed-values: ['true', 'false', 'on']

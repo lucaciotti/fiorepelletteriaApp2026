@@ -28,16 +28,25 @@ rm -rf /var/www/public-init
 # Run Laravel migrations
 # -----------------------------------------------------------
 # Ensure the database schema is up to date.
+# Sui servizi worker/scheduler (SKIP_MIGRATIONS=1) si salta, per evitare
+# migrazioni concorrenti: le esegue solo il container php-fpm.
 # -----------------------------------------------------------
-php artisan migrate --force
-php artisan storage:link
+if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
+  echo "Running migrations, publishing assets and caching..."
+  php artisan migrate --force
+  php artisan storage:link
+  php artisan filament:upgrade
 
-# Clear and cache configurations
-# -----------------------------------------------------------
-# Improves performance by caching config and routes.
-# -----------------------------------------------------------
-php artisan config:cache
-php artisan route:cache
+  # Clear and cache configurations
+  # -----------------------------------------------------------
+  # Improves performance by caching config, routes and views.
+  # -----------------------------------------------------------
+  php artisan config:cache
+  php artisan route:cache
+  php artisan view:cache
+else
+  echo "SKIP_MIGRATIONS=1: salto migrazioni, asset e cache"
+fi
 
 # Run the default command
 exec "$@"

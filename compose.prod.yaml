@@ -31,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/php-fpm/Dockerfile
+    image: app2026-php-fpm
     restart: unless-stopped
     volumes:
       - app2026-public:/var/www/public  # Mount built public assets to ensure the manifest.json and hashed files match between Nginx and PHP-FPM
@@ -49,6 +50,44 @@ services:
     # This prevents the application from trying to connect to the database before it's ready.
     depends_on:
       postgres:
+        condition: service_healthy
+
+  # Worker delle code (notifiche webpush, export, job in coda).
+  queue:
+    image: app2026-php-fpm
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    volumes:
+      - app2026-storage-production:/var/www/storage
+    env_file:
+      - .env
+    environment:
+      SKIP_MIGRATIONS: "1"
+    networks:
+      - app2026-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Scheduler (workorders:check-open all'ora impostata dall'admin, ecc.).
+  scheduler:
+    image: app2026-php-fpm
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - app2026-storage-production:/var/www/storage
+    env_file:
+      - .env
+    environment:
+      SKIP_MIGRATIONS: "1"
+    networks:
+      - app2026-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   postgres:
