@@ -3,14 +3,10 @@
 namespace App\Filament\Resources\WorkOrders\Pages;
 
 use App\Filament\Resources\WorkOrders\WorkOrderResource;
-use App\Models\WorkOrdersRecordTime;
-use Carbon\Carbon;
+use App\Services\WorkOrderTimerService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Schemas\Components\Utilities\Get;
 
 class EditWorkOrder extends EditRecord
 {
@@ -23,60 +19,27 @@ class EditWorkOrder extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        if ($this->data['start_at'] == null) {
-            return Action::make('create')
-                ->label(__('filament-panels::resources/pages/create-record.form.actions.create.label'))
-                ->modalDescription('Non è stata configurato "Inizio Lavorazione"! Proseguire?')
-                ->visible($this->data['end_at'] != null)
-                ->requiresConfirmation()
-                ->action(fn() => $this->save())
-                ->keyBindings(['mod+s']);
-        }
-        if ($this->data['end_at'] == null) {
-            return Action::make('create')
-                ->label(__('filament-panels::resources/pages/create-record.form.actions.create.label'))
-                ->modalDescription('Non è stata configurato "Fine Lavorazione"! Proseguire?')
-                ->visible($this->data['end_at'] != null)
-                ->requiresConfirmation()
-                ->action(fn() => $this->save())
-                ->keyBindings(['mod+s']);
-        }
-
-        return Action::make('create')
+        return Action::make('save')
             ->label('Salva Modifiche')
             ->color('warning')
-            ->hidden(fn(Get $get) => $get('end_at') != null)
-            // ->requiresConfirmation()
-            ->action(fn() => $this->save())
+            ->action(fn () => $this->save())
             ->keyBindings(['mod+s']);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // dd($this);  
-        if ($data['end_at'] != null) {
-            $total_minutes = 0;
-            $first_start_at = $data['start_at'];
-            $latest_end_at = $data['end_at'];
-            $delta_rows = 0;
-            $delta_tot_rows = count($this->data['recordsTime']);
-            $last_end_at = null;
-            foreach ($this->data['recordsTime'] as $deltatime) {
-                $delta_rows ++;
-                $start_at = !empty($deltatime['start_at']) ? $deltatime['start_at'] : ($delta_rows == 1 ? $first_start_at : $last_end_at);
-                $end_at = !empty($deltatime['end_at']) ? $deltatime['end_at'] : ($delta_rows == $delta_tot_rows ? $latest_end_at : $start_at);
-                if(!empty($deltatime['total_minutes'])){
-                    $total_minutes += $deltatime['total_minutes'];
-                } else {
-                    $total_minutes += round(Carbon::createFromDate($start_at)->diffInMinutes(Carbon::createFromDate($end_at)), 0);                        
-                }
-                $last_end_at = $end_at;
-            }
-            $data['total_minutes'] = $total_minutes;
-        }
+        // Lo stato di pausa è governato da WorkOrderTimerService: il valore presente
+        // nel form può essere stale e non deve sovrascrivere quello persistito.
+        unset($data['paused']);
+
         return $data;
     }
 
+    protected function afterSave(): void
+    {
+        // Riporta in coerenza i segmenti di tempo e il totale dopo un salvataggio manuale.
+        app(WorkOrderTimerService::class)->reconcile($this->record);
+    }
 
     protected function getHeaderActions(): array
     {

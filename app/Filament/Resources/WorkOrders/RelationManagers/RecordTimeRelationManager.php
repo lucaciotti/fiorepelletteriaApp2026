@@ -2,31 +2,50 @@
 
 namespace App\Filament\Resources\WorkOrders\RelationManagers;
 
-use Filament\Actions\AssociateAction;
+use App\Models\User;
+use App\Services\WorkOrderTimerService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\DissociateAction;
-use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class RecordTimeRelationManager extends RelationManager
 {
-    protected static string $relationship = 'recordTime';
+    protected static string $relationship = 'recordsTime';
+
+    protected static ?string $title = 'Registro tempi lavorazione';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return true;
+    }
+
+    public function isReadOnly(): bool
+    {
+        // Visibile a tutti; modificabile solo da admin/super_admin.
+        return ! static::currentUserIsAdmin();
+    }
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('start_at')
-                    ->required()
-                    ->maxLength(255),
+                DateTimePicker::make('start_at')
+                    ->label('Inizio')
+                    ->seconds(true)
+                    ->required(),
+                DateTimePicker::make('end_at')
+                    ->label('Fine')
+                    ->seconds(true)
+                    ->after('start_at'),
             ]);
     }
 
@@ -34,27 +53,49 @@ class RecordTimeRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('start_at')
+            ->defaultSort('start_at')
             ->columns([
                 TextColumn::make('start_at')
-                    ->searchable(),
-            ])
-            ->filters([
-                //
+                    ->label('Inizio')
+                    ->dateTime('d/m/Y H:i:s')
+                    ->sortable(),
+                TextColumn::make('end_at')
+                    ->label('Fine')
+                    ->dateTime('d/m/Y H:i:s')
+                    ->placeholder('— in corso —')
+                    ->sortable(),
+                TextColumn::make('total_minutes')
+                    ->label('Minuti')
+                    ->numeric()
+                    ->sortable(),
             ])
             ->headerActions([
-                CreateAction::make(),
-                AssociateAction::make(),
+                CreateAction::make()
+                    ->after(fn () => $this->recomputeOwnerTotal()),
             ])
             ->recordActions([
-                EditAction::make(),
-                DissociateAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->after(fn () => $this->recomputeOwnerTotal()),
+                DeleteAction::make()
+                    ->after(fn () => $this->recomputeOwnerTotal()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DissociateBulkAction::make(),
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->after(fn () => $this->recomputeOwnerTotal()),
                 ]),
             ]);
+    }
+
+    protected function recomputeOwnerTotal(): void
+    {
+        app(WorkOrderTimerService::class)->recomputeTotalMinutes($this->getOwnerRecord());
+    }
+
+    protected static function currentUserIsAdmin(): bool
+    {
+        $user = Auth::user();
+
+        return $user instanceof User && $user->hasRole(['admin', 'super_admin']);
     }
 }
