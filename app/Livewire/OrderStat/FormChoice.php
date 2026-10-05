@@ -5,6 +5,7 @@ namespace App\Livewire\OrderStat;
 use App\Models\Customer;
 use App\Models\Operator;
 use App\Models\Product;
+use App\Statistics\OrderStatState;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\Select;
@@ -13,7 +14,6 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Session;
 use Livewire\Component;
 
 class FormChoice extends Component implements HasActions, HasSchemas
@@ -33,16 +33,13 @@ class FormChoice extends Component implements HasActions, HasSchemas
 
     public function mount(): void
     {
-        if (! Session::has('orderstat.form.groupType')) {
-            Session::put('orderstat.form.groupType', 'customer_id-order_id-product_id-process_type_id');
-        }
-        if (Session::has('orderstat.form.groupType') && Session::get('orderstat.form.groupType') == 'customer_id-number-product_id-process_type_id') {
-            Session::put('orderstat.form.groupType', 'customer_id-order_id-product_id-process_type_id');
-        }
-        $this->groupType = Session::get('orderstat.form.groupType');
-        $this->products = Session::get('orderstat.form.filter.products') ?? [];
-        $this->customers = Session::get('orderstat.form.filter.customers') ?? [];
-        $this->operators = Session::get('orderstat.form.filter.operators') ?? [];
+        $this->groupType = OrderStatState::groupType();
+
+        $filters = OrderStatState::filters();
+        $this->products = $filters['products'];
+        $this->customers = $filters['customers'];
+        $this->operators = $filters['operators'];
+
         $this->form->fill([
             'groupType' => $this->groupType,
             'products' => $this->products,
@@ -101,29 +98,25 @@ class FormChoice extends Component implements HasActions, HasSchemas
 
     public function updatedGroupType()
     {
-        Session::put('orderstat.form.groupType', $this->groupType);
-        // dd(Session::get('orderstat.form.groupType'));
+        OrderStatState::setGroupType($this->groupType);
         $this->dispatch('tableRefresh');
     }
 
     public function updatedProducts()
     {
-        Session::put('orderstat.form.filter.products', $this->products);
-        // dd(Session::get('orderstat.form.groupType'));
+        OrderStatState::setFilter('products', $this->products ?? []);
         $this->dispatch('tableRefresh');
     }
 
     public function updatedCustomers()
     {
-        Session::put('orderstat.form.filter.customers', $this->customers);
-        // dd(Session::get('orderstat.form.groupType'));
+        OrderStatState::setFilter('customers', $this->customers ?? []);
         $this->dispatch('tableRefresh');
     }
 
     public function updatedOperators()
     {
-        Session::put('orderstat.form.filter.operators', $this->operators);
-        // dd(Session::get('orderstat.form.groupType'));
+        OrderStatState::setFilter('operators', $this->operators ?? []);
         $this->dispatch('tableRefresh');
     }
 

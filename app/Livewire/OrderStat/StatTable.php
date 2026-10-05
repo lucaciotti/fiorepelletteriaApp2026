@@ -8,7 +8,8 @@ use App\Models\Customer;
 use App\Models\Operator;
 use App\Models\ProcessType;
 use App\Models\Product;
-use App\Models\WorkOrder;
+use App\Statistics\OrderStatState;
+use App\Statistics\WorkOrderStatsQuery;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -16,7 +17,6 @@ use Filament\Actions\Contracts\HasActions;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -24,8 +24,6 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -45,11 +43,7 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
 
     public function table(Table $table): Table
     {
-        $groupType = '';
-        if (Session::has('orderstat.form.groupType')) {
-            $groupType = Session::get('orderstat.form.groupType') ?? '';
-        }
-        $originalGroupColumns = explode('-', $groupType);
+        $originalGroupColumns = explode('-', OrderStatState::groupType());
 
         $records = $this->_buildRecords($originalGroupColumns);
         $columns = $this->_buildColumns($originalGroupColumns);
@@ -77,21 +71,21 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
             )
             ->deferFilters(false)
             ->headerActions([
-                ])
+            ])
             ->recordActions([
-                ])
+            ])
             ->toolbarActions([
-                    Action::make('exportExcel')
-                        ->label('Esporta Statistica')
-                        ->icon(Heroicon::ArrowDownTray)
-                        ->action(function (Table $table) {
-                            // $table->getVisibleColumns()
-                            $date = Carbon::now();
-                            $exportName = 'Stats_'.$date->format('Ymd').'_'.$date->format('Hmi').'.xlsx';
+                Action::make('exportExcel')
+                    ->label('Esporta Statistica')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->action(function (Table $table) {
+                        // $table->getVisibleColumns()
+                        $date = Carbon::now();
+                        $exportName = 'Stats_'.$date->format('Ymd').'_'.$date->format('Hmi').'.xlsx';
 
-                            return Excel::download(new StatsExport($this->records, $this->columns), $exportName);
-                        }),
-                ]);
+                        return Excel::download(new StatsExport($this->records, $this->columns), $exportName);
+                    }),
+            ]);
 
         return $table;
     }
@@ -149,51 +143,11 @@ class StatTable extends Component implements HasActions, HasSchemas, HasTable
 
     protected function _recordGroupBuilder($groupColumns, $originalGroupColumns): array
     {
-
-        $products = Session::get('orderstat.form.filter.products') ?? [];
-        $customers = Session::get('orderstat.form.filter.customers') ?? [];
-        $operators = Session::get('orderstat.form.filter.operators') ?? [];
-
-        $lvl = (count($groupColumns) == count($originalGroupColumns)) ? 99 : count($groupColumns);
-        $groupColumns = array_map(fn ($v) => $v == 'order_id' ? 'work_orders.order_id' : $v, $groupColumns);
-        // $records = WorkOrder::selectRaw(implode(', ', $groupColumns) . ', ' . $lvl . ' as lvl, SUM(quantity) as quantity, SUM(total_minutes) as total_minutes, MIN(created_at) as created_at, MAX(end_at) as end_at')
-        if ($lvl == 99) {
-            $selectRaw = implode(', ', $groupColumns).', '.$lvl.' as lvl, MAX(order_rows.quantity) as quantity, SUM(total_minutes) as total_minutes, 0 as avg_minutes, MIN(work_orders.created_at) as created_at, MAX(work_orders.end_at) as end_at';
-        } else {
-            $selectRaw = implode(', ', $groupColumns).', '.$lvl.' as lvl, 0 as quantity, 0 as total_minutes, 0 as avg_minutes, MIN(work_orders.created_at) as created_at, MAX(work_orders.end_at) as end_at';
-        }
-        if (in_array('work_orders.order_id', $groupColumns)) {
-            $selectRaw .= ', MAX(orders.number) as number';
-        }
-
-        $records = DB::table('work_orders')
-            ->leftjoin('orders', 'orders.id', '=', 'work_orders.order_id')
-            ->leftjoin('customers', 'customers.id', '=', 'orders.customer_id')
-            ->leftjoin('order_rows', 'order_rows.id', '=', 'work_orders.order_row_id')
-            ->leftjoin('products', 'products.id', '=', 'order_rows.product_id')
-            ->selectRaw($selectRaw)
-            ->where('end_at', '!=', null);
-        if (! empty($products)) {
-            $records->whereIn('product_id', $products);
-        }
-        if (! empty($customers)) {
-            $records->whereIn('customer_id', $customers);
-        }
-        if (! empty($operators)) {
-            $records->whereIn('operator_id', $operators);
-        }
-        $records = $records->groupBy($groupColumns)
-            ->get();
-        // ->toArray();
-
-        $data = collect($records)->map(function ($x) {
-            return (array) $x;
-        })->toArray();
-
-        // if(count($groupColumns) != count($originalGroupColumns)){
-        //     dd($data);
-        // }
-        return $data;
+        return app(WorkOrderStatsQuery::class)->aggregate(
+            columns: $groupColumns,
+            originalGroupColumns: $originalGroupColumns,
+            filters: OrderStatState::filters(),
+        );
     }
 
     protected function _buildColumns($originalGroupColumns): array

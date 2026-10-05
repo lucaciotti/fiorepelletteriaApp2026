@@ -13,9 +13,27 @@
     "public/js/webpush.js",
     "public/sw.js"
   ],
+  "lsp": {
+    "disabledServers": [
+      "typescript",
+      "deno",
+      "opengrep",
+      "ast-grep",
+      "typos"
+    ]
+  },
   "rules": {
     "js-vendor-noise": {
-      "disable": ["no-unused-vars", "no-unused-expressions", "typos"]
+      "disable": [
+        "no-unused-vars",
+        "no-unused-expressions",
+        "unchecked-throwing-call",
+        "unchecked-throwing-call-js",
+        "throw-error-instead-of-string",
+        "throw-error-object",
+        "throw-error-object-js",
+        "tuples-invalid-index"
+      ]
     }
   }
 }
