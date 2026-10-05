@@ -2,10 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use Alareqi\FilamentPwa\FilamentPwaPlugin;
 use App\Providers\Filament\Traits\HasCorePanel;
 use Filament\Panel;
 use Filament\PanelProvider;
-use TomatoPHP\FilamentPWA\FilamentPWAPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -21,7 +21,7 @@ class AppPanelProvider extends PanelProvider
                 // Pages\Dashboard::class,
             ])
             ->plugins([
-                FilamentPWAPlugin::make()->allowPWASettings(false),
+                FilamentPwaPlugin::make(),
             ])
             // ->navigationGroups([
             //     NavigationGroup::make()
