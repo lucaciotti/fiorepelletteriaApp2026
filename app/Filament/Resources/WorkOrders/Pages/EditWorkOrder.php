@@ -59,7 +59,7 @@ class EditWorkOrder extends EditRecord
                 ->color('gray')
                 ->modalHeading('Registro tempi lavorazione')
                 ->modalWidth('4xl')
-                ->modalSubmitAction(fn (): bool => static::isAdmin())
+                ->modalSubmitAction(fn (Action $action) => static::isAdmin() ? $action : false)
                 ->modalSubmitActionLabel('Salva registro')
                 ->modalCancelActionLabel('Chiudi')
                 ->fillForm(fn (): array => ['recordsTime' => $this->getRecordTimeRows()])
