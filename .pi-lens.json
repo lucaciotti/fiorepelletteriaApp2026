@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/apmantza/pi-lens/master/docs/schema/pi-lens-config-v1.json",
+  "ignore": [
+    "vendor/**",
+    "node_modules/**",
+    "public/build/**",
+    "public/js/filament/**",
+    "public/css/filament/**",
+    "public/fonts/filament/**",
+    "public/js/malzariey/**",
+    "public/css/malzariey/**",
+    "public/js/webpush.js",
+    "public/sw.js"
+  ]
+}

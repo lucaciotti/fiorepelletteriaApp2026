@@ -6,6 +6,7 @@ use App\Providers\Filament\Traits\HasCorePanel;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -24,6 +25,10 @@ class AppPanelProvider extends PanelProvider
                 static::pwaPlugin(),
                 static::webpushPlugin(),
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.webpush-toggle'),
+            )
             // ->navigationGroups([
             //     NavigationGroup::make()
             //         ->label('Ordini')
