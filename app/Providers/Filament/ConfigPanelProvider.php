@@ -2,9 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Providers\Filament\Traits\HasCorePanel;
 use Filament\Panel;
 use Filament\PanelProvider;
-use App\Providers\Filament\Traits\HasCorePanel;
 use TomatoPHP\FilamentPWA\FilamentPWAPlugin;
 
 class ConfigPanelProvider extends PanelProvider
@@ -24,14 +24,13 @@ class ConfigPanelProvider extends PanelProvider
                     ->navigationGroup('System')
                     ->navigationSort(2)
                     // ->navigationIcon(Heroicon::OutlinedDocumentText)
-                    ->navigationLabel('Log Viewer')
+                    ->navigationLabel('Log Viewer'),
                 // ->authorize(fn(): bool => auth()->user()->can('view-logs')),
                 // Other plugins
             ])
             ->pages([
                 // Pages\Dashboard::class,
             ])
-            ->discoverResources(in: app_path('Filament/Config/Resources'), for: 'App\Filament\Config\Resources')
-            ->discoverPages(in: app_path('Filament/Config/Pages'), for: 'App\Filament\Config\Pages');
+            ->discoverResources(in: app_path('Filament/Config/Resources'), for: 'App\Filament\Config\Resources');
     }
 }

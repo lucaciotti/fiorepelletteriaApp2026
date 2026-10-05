@@ -2,15 +2,13 @@
 
 namespace App\Filament\Resources\WorkOrders\Tables;
 
-use App\Models\Customer;
 use App\Models\Operator;
 use App\Models\ProcessType;
-use App\Models\Product;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -18,28 +16,27 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use pxlrbt\FilamentExcel\Actions\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use Auth;
-use Filament\Schemas\Components\Utilities\Get;
 
 class WorkOrdersTable
 {
     public static function configure(Table $table): Table
     {
-        if (!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin')){
-            $table->modifyQueryUsing(fn(Builder $query) => $query->where('operator_id', Auth::user()->operator_id));
+        if (! static::isAdmin()) {
+            $table->modifyQueryUsing(fn (Builder $query) => $query->where('operator_id', static::currentUser()?->operator_id));
         }
-        return $table            
+
+        return $table
             ->defaultSort(function (Builder $query): Builder {
-                return $query
-                    ->orderBy('start_at', 'desc');
+                return $query->orderBy('start_at', 'desc');
             })
             ->columns([
                 IconColumn::make('status')
                     ->label('Stato')
-                    ->icon(fn(string $state): Heroicon => match ($state) {
+                    ->icon(fn (string $state): Heroicon => match ($state) {
                         'started' => Heroicon::OutlinedPlayCircle,
                         'paused' => Heroicon::OutlinedPauseCircle,
                         'ended' => Heroicon::OutlinedCheckCircle,
@@ -77,27 +74,26 @@ class WorkOrdersTable
                     ->sortable(),
                 TextColumn::make('start_at')
                     ->dateTime()
-                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('end_at')
                     ->dateTime()
-                    ->sortable()->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('total_minutes')
                     ->label('Tempo Lavorazione (min.)')
-                    ->numeric()->hidden(fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin'))
+                    ->numeric()
+                    ->hidden(fn (): bool => ! static::isAdmin())
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                // TextColumn::make('updated_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->deferColumnManager(false)
             ->filters([
                 DateRangeFilter::make('start_at')->label('Data inizio lavorazione'),
-                DateRangeFilter::make('end_at')->label('Data inizio lavorazione'),
+                DateRangeFilter::make('end_at')->label('Data fine lavorazione'),
                 SelectFilter::make('customer')->label('Clienti')
                     ->relationship('customer', 'name')
                     ->searchable()
@@ -108,24 +104,22 @@ class WorkOrdersTable
                     ->preload(),
                 SelectFilter::make('operator_id')->label('Operatore')
                     ->searchable()
-                    ->options(fn(): array => Operator::query()->pluck('name', 'id')->all()),
+                    ->options(fn (): array => Operator::query()->pluck('name', 'id')->all()),
                 SelectFilter::make('product')->label('Prodotto')
                     ->relationship('product', 'code')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('process_type_id')->label('Lavorazione')
                     ->searchable()
-                    ->options(fn(): array => ProcessType::query()->pluck('description', 'id')->all()),
+                    ->options(fn (): array => ProcessType::query()->pluck('description', 'id')->all()),
             ], layout: FiltersLayout::Modal)->filtersTriggerAction(
-                fn(Action $action) => $action
+                fn (Action $action) => $action
                     ->button()
                     ->slideOver()
                     ->label(__('Filter')),
             )->deferFilters(false)
             ->recordActions([
-                // ViewAction::make()->slideOver(),
                 EditAction::make(),
-
             ])
             ->toolbarActions([
                 ExportAction::make()->exports([
@@ -135,5 +129,17 @@ class WorkOrdersTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function currentUser(): ?User
+    {
+        $user = Auth::user();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    protected static function isAdmin(): bool
+    {
+        return static::currentUser()?->hasRole(['admin', 'super_admin']) ?? false;
     }
 }

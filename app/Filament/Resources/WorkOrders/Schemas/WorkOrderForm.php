@@ -85,7 +85,8 @@ class WorkOrderForm
                             // ->visible(fn(Get $get) => $get('quantity')>0)
                             ->visible(fn (Get $get) => $get('end_at') != null)
                             ->required()
-                            ->numeric(),
+                            ->numeric()
+                            ->minValue(1),
                     ]),
                 Fieldset::make('Tempi di produzione')->columns(fn () => ! static::isAdmin() ? 2 : 3)
                     // ->hidden(fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin'))
