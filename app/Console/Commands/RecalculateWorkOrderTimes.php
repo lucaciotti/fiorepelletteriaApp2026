@@ -3,8 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\WorkOrder;
-use App\Models\WorkOrdersRecordTime;
-use App\Services\WorkOrderTimerService;
+use App\Services\RecalculateWorkOrderTime;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -13,13 +12,13 @@ class RecalculateWorkOrderTimes extends Command
 {
     protected $signature = 'workorders:recalc-times
         {--work-order=* : ID lavorazione da ricalcolare (ripetibile o separati da virgola)}
-        {--all : considera tutte le lavorazioni concluse con segmenti}
-        {--last-end=work_order : Fine dell\'ultimo segmento: work_order|updated_at}
-        {--dry-run : Mostra le modifiche senza salvarle}';
+        {--all : verifica tutte le lavorazioni concluse}
+        {--method= : Applica A o B a tutte senza chiedere (A|B)}
+        {--dry-run : Mostra le proposte senza salvarle}';
 
-    protected $description = 'Ricalcola i tempi dei segmenti usando come fine il created_at del segmento successivo (ultimo: end della lavorazione)';
+    protected $description = 'Per ogni lavorazione disallineata propone il ricalcolo dei tempi con il Metodo A o il Metodo B';
 
-    public function handle(WorkOrderTimerService $timer): int
+    public function handle(RecalculateWorkOrderTime $recalculator): int
     {
         $hasScope = $this->option('all')
             || collect($this->option('work-order'))->contains(fn ($value) => trim((string) $value) !== '');
@@ -28,20 +27,23 @@ class RecalculateWorkOrderTimes extends Command
             return $this->listAnomalies();
         }
 
-        $lastEnd = (string) $this->option('last-end');
+        $method = strtoupper((string) $this->option('method'));
 
-        if (! in_array($lastEnd, ['updated_at', 'work_order'], true)) {
-            $this->error("Opzione --last-end non valida: usare 'updated_at' o 'work_order'.");
+        if ($method !== '' && ! in_array($method, ['A', 'B'], true)) {
+            $this->error('Opzione --method non valida: usare A oppure B.');
 
             return self::FAILURE;
         }
 
         $dryRun = (bool) $this->option('dry-run');
-        $useWorkOrderEndForLast = $lastEnd === 'work_order';
 
-        $this->info($dryRun
-            ? 'DRY RUN — nessuna modifica verrà salvata'
-            : 'Applico il ricalcolo dei tempi...');
+        if ($method !== '') {
+            $this->info("Applico il Metodo {$method}".($dryRun ? ' (DRY RUN)' : '').'.');
+        } elseif ($dryRun) {
+            $this->info('DRY RUN — mostro le proposte, nessuna modifica.');
+        } else {
+            $this->info('Per ogni lavorazione disallineata potrai scegliere il Metodo A, il Metodo B o saltare.');
+        }
 
         $workOrders = $this->resolveWorkOrders();
 
@@ -51,33 +53,59 @@ class RecalculateWorkOrderTimes extends Command
             return self::SUCCESS;
         }
 
-        $rows = [];
+        $applied = ['A' => 0, 'B' => 0, 'skip' => 0];
 
         foreach ($workOrders as $workOrder) {
             $segments = $workOrder->recordsTime()->orderBy('id')->get()->values();
 
-            $newTotal = $this->recalculate($workOrder, $segments, $dryRun, $useWorkOrderEndForLast);
+            if ($segments->isEmpty()) {
+                continue;
+            }
 
-            $rows[] = [
-                $workOrder->id,
-                $workOrder->total_minutes,
-                $newTotal,
-                $segments->count(),
-                $this->describeAnomalies($segments),
-            ];
+            $anomalies = $this->describeAnomalies($segments);
+
+            if ($anomalies === '—') {
+                $this->line("Work order {$workOrder->id}: nessun disallineamento, saltata.");
+                $applied['skip']++;
+
+                continue;
+            }
+
+            $proposalA = $recalculator->methodA($workOrder);
+            $proposalB = $recalculator->methodB($workOrder);
+
+            $this->renderProposal($workOrder, $segments, $proposalA, $proposalB, $anomalies);
+
+            if ($dryRun && $method === '') {
+                continue;
+            }
+
+            $choice = $method !== '' ? $method : (string) $this->choice(
+                "Work order {$workOrder->id}: quale metodo applico?",
+                ['A' => 'Metodo A (conservativo)', 'B' => 'Metodo B (created_at/updated_at)', 'skip' => 'Salta'],
+                'skip'
+            );
+
+            if ($choice === 'A' || $choice === 'B') {
+                if ($dryRun) {
+                    $this->line("  [DRY RUN] Applicherei il Metodo {$choice}.");
+                } else {
+                    $recalculator->apply($workOrder, $choice === 'A' ? $proposalA : $proposalB);
+                    $this->info("  Applicato Metodo {$choice} a work order {$workOrder->id}.");
+                }
+            } else {
+                $applied['skip']++;
+                $this->line("  Work order {$workOrder->id} saltata.");
+            }
+
+            $this->newLine();
         }
 
-        $this->newLine();
-        $this->table(
-            ['Work order', 'Total prima', 'Total dopo', 'Segmenti', 'Anomalie'],
-            $rows
-        );
-
-        $this->newLine();
         $this->info(sprintf(
-            '%sLavorazioni elaborate: %d',
-            $dryRun ? '[DRY RUN] ' : '',
-            count($rows)
+            'Metodo A: %d — Metodo B: %d — Saltate: %d',
+            $applied['A'],
+            $applied['B'],
+            $applied['skip']
         ));
 
         return self::SUCCESS;
@@ -88,7 +116,7 @@ class RecalculateWorkOrderTimes extends Command
      */
     protected function listAnomalies(): int
     {
-        $this->warn('Nessuno scope specificato. Usa --work-order=ID (consigliato) oppure --all.');
+        $this->warn('Nessuno scope specificato. Usa --work-order=ID oppure --all.');
         $this->newLine();
 
         $rows = WorkOrder::whereHas('recordsTime')
@@ -149,64 +177,54 @@ class RecalculateWorkOrderTimes extends Command
     }
 
     /**
-     * Applica la regola: end = created_at del segmento successivo; per l'ultimo, end della
-     * lavorazione (oppure updated_at con --last-end=updated_at).
-     *
-     * @param  Collection<int, WorkOrdersRecordTime>  $segments
+     * @param  Collection<int, \App\Models\WorkOrdersRecordTime>  $segments
+     * @param  array{segments: array<int, array<string, mixed>>, total: float}  $proposalA
+     * @param  array{segments: array<int, array<string, mixed>>, total: float}  $proposalB
      */
-    protected function recalculate(
+    protected function renderProposal(
         WorkOrder $workOrder,
         Collection $segments,
-        bool $dryRun,
-        bool $useWorkOrderEndForLast,
-    ): float {
-        $previousEnd = null;
-        $newTotal = 0.0;
+        array $proposalA,
+        array $proposalB,
+        string $anomalies,
+    ): void {
+        $aById = collect($proposalA['segments'])->keyBy('id');
+        $bById = collect($proposalB['segments'])->keyBy('id');
 
-        foreach ($segments as $index => $segment) {
-            $start = $segment->start_at
-                ? Carbon::parse($segment->start_at)
-                : ($previousEnd
-                    ?? ($workOrder->start_at
-                        ? Carbon::parse($workOrder->start_at)
-                        : Carbon::parse($segment->created_at)));
+        $rows = [];
 
-            if (isset($segments[$index + 1])) {
-                $end = Carbon::parse($segments[$index + 1]->created_at);
-            } elseif ($useWorkOrderEndForLast && $workOrder->end_at) {
-                $end = Carbon::parse($workOrder->end_at);
-            } else {
-                $end = Carbon::parse($segment->updated_at);
-            }
+        foreach ($segments as $segment) {
+            $a = $aById->get($segment->id);
+            $b = $bById->get($segment->id);
 
-            if ($end->lessThan($start)) {
-                $end = $start->copy();
-            }
-
-            $minutes = round($start->diffInMinutes($end), 2);
-            $newTotal += $minutes;
-            $previousEnd = $end;
-
-            if (! $dryRun) {
-                $segment->forceFill([
-                    'start_at' => $start,
-                    'end_at' => $end,
-                    'total_minutes' => $minutes,
-                ])->save();
-            }
+            $rows[] = [
+                $segment->id,
+                $this->format($segment->start_at),
+                $this->format($segment->end_at),
+                $segment->total_minutes ?? '—',
+                $this->format($a['end_at'] ?? null),
+                $a['total_minutes'] ?? '',
+                $this->format($b['end_at'] ?? null),
+                $b['total_minutes'] ?? '',
+            ];
         }
 
-        $newTotal = round($newTotal, 2);
-
-        if (! $dryRun) {
-            $workOrder->forceFill(['total_minutes' => $newTotal])->save();
-        }
-
-        return $newTotal;
+        $this->newLine();
+        $this->line("Work order {$workOrder->id} — anomalie: {$anomalies}");
+        $this->table(
+            ['Seg', 'Start', 'End att.', 'Min att.', 'End A', 'Min A', 'End B', 'Min B'],
+            $rows
+        );
+        $this->line(sprintf(
+            'Totale attuale: %s  |  Metodo A: %s  |  Metodo B: %s',
+            $workOrder->total_minutes ?? '—',
+            $proposalA['total'],
+            $proposalB['total']
+        ));
     }
 
     /**
-     * @param  Collection<int, WorkOrdersRecordTime>  $segments
+     * @param  Collection<int, \App\Models\WorkOrdersRecordTime>  $segments
      */
     protected function describeAnomalies(Collection $segments): string
     {
@@ -226,5 +244,14 @@ class RecalculateWorkOrderTimes extends Command
         }
 
         return $anomalies === [] ? '—' : implode(', ', $anomalies);
+    }
+
+    protected function format(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '—';
+        }
+
+        return Carbon::parse($value)->format('d/m H:i');
     }
 }
