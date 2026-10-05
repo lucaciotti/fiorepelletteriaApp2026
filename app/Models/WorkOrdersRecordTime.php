@@ -7,10 +7,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkOrdersRecordTime extends Model
 {
-    protected $table = "work_orders_record_time";
+    protected $table = 'work_orders_record_time';
+
     protected $guarded = [
-        'id'
+        'id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
+            'total_minutes' => 'float',
+        ];
+    }
 
     public function workOrder(): BelongsTo
     {
