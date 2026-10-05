@@ -27,7 +27,7 @@ class ConfigPanelProvider extends PanelProvider
                 // Other plugins
             ])
             ->pages([
-                // Pages\Dashboard::class,
+                \App\Filament\Config\Pages\ManageWorkOrderSettings::class,
             ])
             ->discoverResources(in: app_path('Filament/Config/Resources'), for: 'App\Filament\Config\Resources');
     }
