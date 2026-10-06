@@ -19,6 +19,15 @@
 /storage/*.key
 /storage/pail
 /vendor
+/.context
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Filament/plugin compiled assets (rigenerati da `php artisan filament:upgrade`)
+/public/js/filament
+/public/css/filament
+/public/fonts/filament
+/public/js/malzariey
+/public/css/malzariey
+/public/css/app
