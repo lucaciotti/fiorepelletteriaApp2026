@@ -28,7 +28,7 @@ class CorePanel extends Panel
             ->viteTheme('resources/css/filament/default/theme.css')
             ->defaultThemeMode(ThemeMode::Light)
             ->brandLogo(asset('images/logo.png'))
-            ->brandName('App 2026')
+            ->brandName('App Pelletteria')
             ->brandLogoHeight('8rem')
             ->sidebarCollapsibleOnDesktop()
             ->unsavedChangesAlerts()

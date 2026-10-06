@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -10,6 +11,8 @@ use Filament\Livewire\Notifications;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables\Table;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use TomatoPHP\FilamentUsers\Filament\Resources\Users\Schemas\UserForm;
 
@@ -29,23 +32,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->environment('production')) {
-            \URL::forceScheme('https');
+            URL::forceScheme('https');
         }
-        
+
         PanelSwitch::configureUsing(function (PanelSwitch $panelSwitch) {
             // $panelSwitch->modalHeading('Available Panels');
             $panelSwitch->simple();
             $panelSwitch->renderHook(PanelsRenderHook::USER_MENU_BEFORE);
             $panelSwitch->labels([
-                'app' => "Home",
+                'app' => 'Home',
                 'admin' => 'Main',
-                'config' => "Configurazioni",
+                'config' => 'Configurazioni',
             ]);
-            if(auth()->user() && !auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')){
-                $panelSwitch->panels(['app']);
-            } else {
-                $panelSwitch->panels(['app', 'admin', 'config']);
-            }
+            $user = Auth::user();
+            $isAdmin = $user instanceof User && $user->hasRole(['admin', 'super_admin']);
+
+            $panelSwitch->panels($isAdmin ? ['app', 'admin', 'config'] : ['app']);
             // $panelSwitch->renderHook(PanelsRenderHook::USER_MENU_AFTER);
             // $panelSwitch->modalWidth('sm');
             // $panelSwitch->icons([
@@ -76,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
                 ->reorderableColumns()
                 ->striped()
                 ->filtersTriggerAction(
-                    fn(Action $action) => $action
+                    fn (Action $action) => $action
                         ->slideOver()
                         ->button(),
                 )

@@ -2,18 +2,16 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Panel;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use Filament\Pages;
-use Filament\PanelProvider;
 use App\Providers\Filament\Traits\HasCorePanel;
-use Filament\Navigation\NavigationGroup;
-use TomatoPHP\FilamentPWA\FilamentPWAPlugin;
+use Filament\Contracts\Plugin;
+use Filament\Panel;
+use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 
 class AppPanelProvider extends PanelProvider
 {
     use HasCorePanel;
-    
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -24,8 +22,13 @@ class AppPanelProvider extends PanelProvider
                 // Pages\Dashboard::class,
             ])
             ->plugins([
-                FilamentPWAPlugin::make()->allowPWASettings(false),
+                static::pwaPlugin(),
+                static::webpushPlugin(),
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.webpush-toggle'),
+            )
             // ->navigationGroups([
             //     NavigationGroup::make()
             //         ->label('Ordini')
@@ -38,8 +41,26 @@ class AppPanelProvider extends PanelProvider
             //         ->icon('heroicon-o-cog-6-tooth')
             //         ->collapsed(),
             // ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets');
+            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources');
+    }
+
+    /**
+     * Il plugin PWA è risolto tramite nome di classe: evita un riferimento di tipo
+     * diretto a un pacchetto vendor non indicizzato dall'IDE, ma resta valido a runtime.
+     */
+    protected static function pwaPlugin(): Plugin
+    {
+        /** @var Plugin $plugin */
+        $plugin = app(sprintf('%s\\%s', 'Alareqi\\FilamentPwa', 'FilamentPwaPlugin'));
+
+        return $plugin;
+    }
+
+    protected static function webpushPlugin(): Plugin
+    {
+        /** @var Plugin $plugin */
+        $plugin = app(sprintf('%s\\%s', 'FilamentWebpush', 'FilamentWebpushPlugin'));
+
+        return $plugin;
     }
 }

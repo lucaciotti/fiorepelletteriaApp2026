@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\WorkOrders\Pages;
 
 use App\Filament\Resources\WorkOrders\WorkOrderResource;
+use App\Services\WorkOrderTimerService;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateWorkOrder extends CreateRecord
 {
     protected static string $resource = WorkOrderResource::class;
+
     protected static bool $canCreateAnother = false;
 
     protected function getRedirectUrl(): string
@@ -16,11 +18,17 @@ class CreateWorkOrder extends CreateRecord
         return $this->previousUrl ?? $this->getResource()::getUrl('index');
     }
 
-
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['start_at'] = now();
+
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        // Apre il primo segmento di tempo e marca la lavorazione come avviata.
+        app(WorkOrderTimerService::class)->start($this->record);
     }
 
     protected function getCreateFormAction(): Action
@@ -45,7 +53,7 @@ class CreateWorkOrder extends CreateRecord
             ->color('success')
             ->modalDescription('Al salvataggio verrà impostato l\'"Inizio Lavorazione". Proseguire?')
             ->requiresConfirmation()
-            ->action(fn() => $this->create())
+            ->action(fn () => $this->create())
             ->keyBindings(['mod+s']);
     }
 }

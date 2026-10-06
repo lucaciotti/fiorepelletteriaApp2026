@@ -124,3 +124,32 @@ sail artisan make:filament-relation-manager TempTaskResource tempTaskRows
 
 # page ManageRelatedRecords
 sail artisan make:filament-page ManageTaskImportFileTempTask --resource=TaskImportFileResource --type=ManageRelatedRecords
+# ---------------------------------------------------------------
+# Deploy / Produzione (compose.prod.yaml)
+# ---------------------------------------------------------------
+# Servizi: web (nginx), php-fpm, queue (worker), scheduler, postgres, redis
+docker compose -f compose.prod.yaml build
+docker compose -f compose.prod.yaml up -d
+#
+# Il container php-fpm esegue automaticamente all'avvio:
+#   php artisan migrate --force
+#   php artisan storage:link
+#   php artisan filament:upgrade
+#   php artisan config:cache && route:cache && view:cache
+# I servizi queue/scheduler partono con SKIP_MIGRATIONS=1.
+#
+# Variabili richieste in .env (produzione):
+#   APP_ENV=production, APP_URL=https://..., APP_KEY=...
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+#   QUEUE_CONNECTION=database (o redis)
+
+# Comandi utili
+sail artisan migrate --force
+sail artisan filament:upgrade
+sail artisan optimize
+sail artisan queue:work
+sail artisan schedule:work
+sail artisan schedule:list
+sail artisan webpush:test <user_id>
+sail artisan workorders:check-open
+sail artisan workorders:recalc-times --work-order=<id> --dry-run

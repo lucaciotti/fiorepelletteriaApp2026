@@ -11,29 +11,53 @@ use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 class WorkOrder extends Model
 {
     protected $guarded = [
-        'id'
+        'id',
     ];
+
     protected $appends = ['status', 'fulldescr'];
 
-    public function getStatusAttribute()
+    protected function casts(): array
+    {
+        return [
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
+            'paused' => 'boolean',
+            'total_minutes' => 'float',
+            'quantity' => 'float',
+        ];
+    }
+
+    public function getStatusAttribute(): string
     {
         if ($this->paused) {
-                return 'paused';
+            return 'paused';
         }
-        if ($this->end_at == null) {
-                return 'started';
+
+        if ($this->end_at === null) {
+            return 'started';
         }
+
         return 'ended';
     }
 
-    public function getFulldescrAttribute()
+    public function getFulldescrAttribute(): string
     {
-        return '[' . $this->processType->description . '] del ' . (new Carbon($this->start_at))->format('d/m/Y') . ' di: ' . $this->operator->name;
+        $process = $this->processType?->description ?? '—';
+        $date = $this->start_at ? $this->start_at->format('d/m/Y') : '—';
+        $operator = $this->operator?->name ?? '—';
+
+        return "[{$process}] del {$date} di: {$operator}";
     }
 
-    public function getOrdrifAttribute()
+    public function getOrdrifAttribute(): string
     {
-        return 'Ord. n.' . $this->order->number . ' del ' . (new Carbon($this->order->date))->format('d/m/Y');
+        if (! $this->order) {
+            return '—';
+        }
+
+        $date = $this->order->date ? Carbon::parse($this->order->date)->format('d/m/Y') : '—';
+
+        return 'Ord. n.'.$this->order->number.' del '.$date;
     }
 
     public function processType(): BelongsTo
