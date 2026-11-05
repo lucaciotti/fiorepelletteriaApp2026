@@ -68,10 +68,9 @@ class WorkOrdersTable
                     ->label('Prodotto')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('quantity')
+                TextColumn::make('orderRow.quantity')
                     ->label('Qta')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 TextColumn::make('start_at')
                     ->dateTime()
                     ->sortable()

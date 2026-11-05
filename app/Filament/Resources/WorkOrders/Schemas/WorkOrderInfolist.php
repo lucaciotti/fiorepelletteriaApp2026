@@ -17,7 +17,8 @@ class WorkOrderInfolist
                     ->label('Customer'),
                 TextEntry::make('product.id')
                     ->label('Product'),
-                TextEntry::make('quantity')
+                TextEntry::make('orderRow.quantity')
+                    ->label('Quantità')
                     ->numeric(),
                 TextEntry::make('start_at')
                     ->dateTime(),

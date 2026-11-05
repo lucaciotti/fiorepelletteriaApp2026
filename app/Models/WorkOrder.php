@@ -23,7 +23,6 @@ class WorkOrder extends Model
             'end_at' => 'datetime',
             'paused' => 'boolean',
             'total_minutes' => 'float',
-            'quantity' => 'float',
         ];
     }
 

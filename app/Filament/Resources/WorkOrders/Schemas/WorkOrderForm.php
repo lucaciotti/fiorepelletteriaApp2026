@@ -44,7 +44,7 @@ class WorkOrderForm
                             ->live()
                             ->required(),
                     ]),
-                Fieldset::make('Dati produzione')->columns(fn (Get $get) => $get('quantity') > 0 ? 3 : 2)
+                Fieldset::make('Dati produzione')->columns(2)
                     ->schema([
                         Select::make('operator_id')
                             ->default($operator_id)
@@ -81,12 +81,6 @@ class WorkOrderForm
                             ->searchable()
                             ->preload()
                             ->required(),
-                        TextInput::make('quantity')->label('Quantità')
-                            // ->visible(fn(Get $get) => $get('quantity')>0)
-                            ->visible(fn (Get $get) => $get('end_at') != null)
-                            ->required()
-                            ->numeric()
-                            ->minValue(1),
                     ]),
                 Fieldset::make('Tempi di produzione')->columns(fn () => ! static::isAdmin() ? 2 : 3)
                     // ->hidden(fn(Get $get) => !Auth::user()->hasRole('admin') && !Auth::user()->hasRole('super_admin'))

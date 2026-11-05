@@ -1,5 +1,9 @@
+# Versione PHP pinnata, unica fonte di verità per staging e runtime.
+# Per aggiornare: alzare qui e rifare `docker compose -f compose.prod.yaml build`.
+ARG PHP_VERSION=8.4.27
+
 # Stage 1: Build environment and Composer dependencies
-FROM php:8.4-fpm AS builder
+FROM php:${PHP_VERSION}-fpm AS builder
 
 # Install system dependencies and PHP extensions for Laravel with MySQL/PostgreSQL support.
 # Dependencies in this stage are only required for building the final image.
@@ -60,7 +64,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN npm install && npm run build
 
 # Stage 2: Production environment
-FROM php:8.4-fpm
+FROM php:${PHP_VERSION}-fpm
 
 # Install only runtime libraries needed in production
 # libfcgi-bin and procps are required for the php-fpm-healthcheck script
